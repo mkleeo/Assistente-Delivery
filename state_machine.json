@@ -1,0 +1,90 @@
+{
+    "Comment": "Fluxo de Trabalho Completo para Assistente de Delivery com Sugestões de Experiência Gastronômica",
+    "StartAt": "RecebePedido",
+    "States": {
+      "RecebePedido": {
+        "Type": "Task",
+        "Resource": "arn:aws:lambda:<REGION>:<ACCOUNT_ID>:function:RecebePedido",
+        "Parameters": {
+          "pedido": {
+            "cliente": "Maria",
+            "itens": ["Macarrão Carbonara"]
+          }
+        },
+        "ResultPath": "$.pedido",
+        "Next": "SugereExperienciaGastronomica"
+      },
+      "SugereExperienciaGastronomica": {
+        "Type": "Task",
+        "Resource": "arn:aws:lambda:<REGION>:<ACCOUNT_ID>:function:SugereExperienciaGastronomica",
+        "Parameters": {
+          "pedido": "$.pedido",
+          "sugestoes": {
+            "experiencia": [
+              {
+                "tipo": "bebidas",
+                "descricao": "Sugestão de vinhos para harmonizar com o Macarrão Carbonara.",
+                "opcoes": ["Chardonnay", "Sauvignon Blanc", "Pinot Grigio"]
+              },
+              {
+                "tipo": "entrada",
+                "descricao": "Entrada para começar a refeição.",
+                "opcoes": ["Bruschetta com tomate e manjericão"]
+              },
+              {
+                "tipo": "sobremesa",
+                "descricao": "Sobremesa para finalizar sua experiência gastronômica.",
+                "opcoes": ["Tiramisu", "Panna Cotta com frutas vermelhas"]
+              }
+            ]
+          }
+        },
+        "ResultPath": "$.sugestao",
+        "Next": "VerificaEstoque"
+      },
+      "VerificaEstoque": {
+        "Type": "Task",
+        "Resource": "arn:aws:lambda:<REGION>:<ACCOUNT_ID>:function:VerificaEstoque",
+        "ResultPath": "$.estoque",
+        "Next": "DecisaoEstoque"
+      },
+      "DecisaoEstoque": {
+        "Type": "Choice",
+        "Choices": [
+          {
+            "Variable": "$.estoque.disponibilidade",
+            "BooleanEquals": true,
+            "Next": "ConfirmaPedido"
+          }
+        ],
+        "Default": "EstoqueIndisponivel"
+      },
+      "ConfirmaPedido": {
+        "Type": "Task",
+        "Resource": "arn:aws:lambda:<REGION>:<ACCOUNT_ID>:function:ConfirmaPedido",
+        "ResultPath": "$.confirmacao",
+        "Next": "NotificaCliente"
+      },
+      "EstoqueIndisponivel": {
+        "Type": "Fail",
+        "Error": "EstoqueIndisponivelError",
+        "Cause": "Itens indisponíveis no estoque."
+      },
+      "NotificaCliente": {
+        "Type": "Task",
+        "Resource": "arn:aws:lambda:<REGION>:<ACCOUNT_ID>:function:NotificaCliente",
+        "ResultPath": "$.notificacao",
+        "Next": "RastreamentoEntrega"
+      },
+      "RastreamentoEntrega": {
+        "Type": "Task",
+        "Resource": "arn:aws:lambda:<REGION>:<ACCOUNT_ID>:function:RastreamentoEntrega",
+        "ResultPath": "$.rastreamento",
+        "Next": "ConfirmaEntrega"
+      },
+      "ConfirmaEntrega": {
+        "Type": "Succeed"
+      }
+    }
+  }
+  
